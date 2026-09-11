@@ -1,0 +1,11 @@
+{
+  "name": "Dorst Web",
+  "slug": "dorst-web",
+  "engagement": "freelance-gig",
+  "framework": "forge",
+  "state_id": "proj03-dorst-web",
+  "state_path": "projects-feedback/proj03-dorst-web",
+  "project_path": "/home/ikigai/Dev/clients/dorst/dorst-web",
+  "framework_root": "/home/ikigai/Dev/projects/forge",
+  "notes": "Forge project split 2026-09-11; sibling of dorst-erp-crm / dorst-ai / dorst-ocr."
+}
