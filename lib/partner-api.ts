@@ -103,10 +103,24 @@ export function volumeUnitLabel(unit: string): string {
   return map[unit] ?? unit;
 }
 
-export function productGroup(unit: string): string {
-  if (unit.includes("keg")) return unit.includes("30") ? "Kegs — 30L" : "Kegs — 20L";
-  if (unit.includes("bottle")) return "Canned Beer";
-  return "Other";
+/** Partner order catalog sections (stable order). */
+export const PARTNER_CATALOG_GROUPS = ["Kegs", "Cans / bottles"] as const;
+export type PartnerCatalogGroup = (typeof PARTNER_CATALOG_GROUPS)[number];
+
+/**
+ * Map commercial volume units (and common legacy values) to partner sections.
+ * Services / unknown packs return null and should be hidden from the catalog.
+ */
+export function productGroup(
+  unit: string,
+  name = ""
+): PartnerCatalogGroup | null {
+  const u = (unit ?? "").toLowerCase();
+  const n = (name ?? "").toLowerCase();
+
+  if (u.includes("keg") || u === "hl" || /\bkeg\b/.test(n)) return "Kegs";
+  if (u.includes("can") || u.includes("bottle")) return "Cans / bottles";
+  return null;
 }
 
 export async function registerLookup(eik: string, email: string) {

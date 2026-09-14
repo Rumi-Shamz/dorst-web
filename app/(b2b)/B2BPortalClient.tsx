@@ -16,6 +16,7 @@ import {
   getPartnerToken,
   partnerLogin,
   placePartnerOrder,
+  PARTNER_CATALOG_GROUPS,
   productGroup,
   registerConfirm,
   registerLookup,
@@ -89,21 +90,34 @@ export function B2BPortalClient() {
       setDeliveryAddress(me.delivery_address)
       setProducts(catalog.products)
       setScreen(3)
-    } catch {
+    } catch (err) {
       clearPartnerSession()
       setLoggedIn(false)
+      setFormError(err instanceof Error ? err.message : 'Session restore failed')
     }
   }
 
+  const catalogProducts = useMemo(
+    () => products.filter((p) => productGroup(p.volume_unit, p.name) != null),
+    [products]
+  )
+
   const subtotalCents = useMemo(() =>
-    products.reduce((sum, p) => sum + Math.round((qty[p.id] ?? 0) * p.unit_price_eur_cents), 0),
-  [products, qty])
+    catalogProducts.reduce((sum, p) => sum + Math.round((qty[p.id] ?? 0) * p.unit_price_eur_cents), 0),
+  [catalogProducts, qty])
 
   const subtotalAfterDiscount = Math.max(0, subtotalCents - discountCents)
   const vatCents = Math.round(subtotalAfterDiscount * 0.2)
   const totalCents = subtotalAfterDiscount + vatCents
 
-  const groups = useMemo(() => [...new Set(products.map((p) => productGroup(p.volume_unit)))], [products])
+  const groups = useMemo(() => {
+    const present = new Set(
+      catalogProducts
+        .map((p) => productGroup(p.volume_unit, p.name))
+        .filter((g): g is NonNullable<typeof g> => g != null)
+    )
+    return PARTNER_CATALOG_GROUPS.filter((g) => present.has(g))
+  }, [catalogProducts])
 
   async function onRegisterLookup() {
     setFormError('')
@@ -592,11 +606,11 @@ export function B2BPortalClient() {
               <div style={{ fontWeight: 600 }}>{companyName}</div>
               <div style={{ fontSize: 13, color: '#706E66' }}>ЕИК: {eikInput}</div>
             </div>
-            {products.length === 0 && <p style={{ color: '#706E66' }}>No products available for ordering.</p>}
+            {catalogProducts.length === 0 && <p style={{ color: '#706E66' }}>No products available for ordering.</p>}
             {groups.map((group) => (
               <div key={group} style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#706E66', marginBottom: 8 }}>{group}</div>
-                {products.filter((p) => productGroup(p.volume_unit) === group).map((p) => {
+                {catalogProducts.filter((p) => productGroup(p.volume_unit, p.name) === group).map((p) => {
                   const q = qty[p.id] ?? 0
                   return (
                     <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 12, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #E8E5DC' }}>
