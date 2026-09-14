@@ -610,24 +610,63 @@ export function B2BPortalClient() {
             {groups.map((group) => (
               <div key={group} style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#706E66', marginBottom: 8 }}>{group}</div>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 88px 96px 80px',
+                    gap: 12,
+                    alignItems: 'center',
+                    padding: '0 0 8px',
+                    borderBottom: '1px solid #E8E5DC',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: '#706E66',
+                  }}
+                >
+                  <div>Product</div>
+                  <div style={{ textAlign: 'right' }}>Price</div>
+                  <div style={{ textAlign: 'center' }}>Qty</div>
+                  <div style={{ textAlign: 'right' }}>Total</div>
+                </div>
                 {catalogProducts.filter((p) => productGroup(p.volume_unit, p.name) === group).map((p) => {
                   const q = qty[p.id] ?? 0
                   return (
-                    <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 12, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #E8E5DC' }}>
+                    <div
+                      key={p.id}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 88px 96px 80px',
+                        gap: 12,
+                        alignItems: 'center',
+                        padding: '12px 0',
+                        borderBottom: '1px solid #E8E5DC',
+                      }}
+                    >
                       <div>
                         <div style={{ fontWeight: 600 }}>{p.name}</div>
-                        <div style={{ fontSize: 12, color: '#706E66' }}>{p.style} · {volumeUnitLabel(p.volume_unit)} · €{(p.unit_price_eur_cents / 100).toFixed(2)}</div>
+                        <div style={{ fontSize: 12, color: '#706E66' }}>
+                          {[p.style, volumeUnitLabel(p.volume_unit)].filter(Boolean).join(' · ')}
+                        </div>
                         {stockNotes[p.id] && <div style={{ fontSize: 12, color: '#B45309', marginTop: 4 }}>{stockNotes[p.id]}</div>}
                       </div>
-                      <input
-                        type="number"
-                        min={0}
-                        value={q}
-                        onChange={(e) => dispatchQty({ type: 'SET', id: p.id, qty: Number(e.target.value) })}
-                        onBlur={() => void onQtyBlur(p.id)}
-                        style={{ ...inputStyle, width: 80, textAlign: 'center' }}
-                      />
-                      <div style={{ fontWeight: 600, minWidth: 72, textAlign: 'right' }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, textAlign: 'right', color: 'var(--ink)' }}>
+                        €{(p.unit_price_eur_cents / 100).toFixed(2)}
+                      </div>
+                      <div>
+                        <input
+                          type="number"
+                          min={0}
+                          aria-label={`Quantity for ${p.name}`}
+                          title="Quantity"
+                          value={q}
+                          onChange={(e) => dispatchQty({ type: 'SET', id: p.id, qty: Number(e.target.value) })}
+                          onBlur={() => void onQtyBlur(p.id)}
+                          style={{ ...inputStyle, width: '100%', textAlign: 'center', marginBottom: 0 }}
+                        />
+                      </div>
+                      <div style={{ fontWeight: 600, textAlign: 'right' }}>
                         {q > 0 ? `€${((q * p.unit_price_eur_cents) / 100).toFixed(2)}` : '—'}
                       </div>
                     </div>
