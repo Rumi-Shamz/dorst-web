@@ -123,6 +123,20 @@ export function productGroup(
   return null;
 }
 
+/** Partner-facing name/price overrides (no DB writes). */
+function applyPartnerCatalogDisplay(product: PartnerProduct): PartnerProduct {
+  const n = product.name.toLowerCase();
+  if (!(n.includes("import beer") && n.includes("white label"))) {
+    return product;
+  }
+  return {
+    ...product,
+    name: "White label - 500ml can",
+    unit_price_eur_cents: 250,
+    unit_price_eur: 2.5,
+  };
+}
+
 export async function registerLookup(eik: string, email: string) {
   return partnerFetch<{ status: string; draft?: RegistryDraft; company_name?: string }>(
     "/register/lookup",
@@ -221,7 +235,10 @@ export async function fetchPartnerMe() {
 }
 
 export async function fetchPartnerProducts() {
-  return partnerFetch<{ products: PartnerProduct[] }>("/products");
+  const data = await partnerFetch<{ products: PartnerProduct[] }>("/products");
+  return {
+    products: data.products.map(applyPartnerCatalogDisplay),
+  };
 }
 
 export async function checkAvailability(productId: string, quantity: number) {
