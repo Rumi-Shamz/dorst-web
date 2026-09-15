@@ -463,45 +463,80 @@ export function B2BPortalClient() {
                   </button>
                 ))}
               </div>
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>ЕИК</label>
-                <input type="text" value={eikInput} onChange={(e) => setEikInput(e.target.value)} style={inputStyle} />
-              </div>
-              {mode === 'onboard' && (
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Email</label>
-                  <input type="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={inputStyle} />
-                </div>
-              )}
-              {mode === 'login' && (
-                <>
-                  <div style={{ marginBottom: 16 }}>
-                    <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Email (for password resend)</label>
-                    <input type="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={inputStyle} />
-                  </div>
-                  <div style={{ marginBottom: 20 }}>
-                    <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Password</label>
-                    <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} style={inputStyle} />
-                  </div>
-                </>
-              )}
-              <button
-                onClick={mode === 'login' ? onLogin : onRegisterLookup}
-                disabled={loading}
-                style={{ ...btnPrimary, opacity: loading ? 0.6 : 1 }}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  void (mode === 'login' ? onLogin() : onRegisterLookup())
+                }}
               >
-                {loading ? 'Please wait…' : mode === 'login' ? 'Sign in →' : 'Continue →'}
-              </button>
-              {mode === 'login' && (
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>ЕИК</label>
+                  <input
+                    type="text"
+                    name="eik"
+                    autoComplete="username"
+                    value={eikInput}
+                    onChange={(e) => setEikInput(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                {mode === 'onboard' && (
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      autoComplete="email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+                )}
+                {mode === 'login' && (
+                  <>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Email (for password resend)</label>
+                      <input
+                        type="email"
+                        name="email"
+                        autoComplete="email"
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Password</label>
+                      <input
+                        type="password"
+                        name="password"
+                        autoComplete="current-password"
+                        value={passwordInput}
+                        onChange={(e) => setPasswordInput(e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+                  </>
+                )}
                 <button
-                  type="button"
-                  onClick={() => void onResendPassword()}
+                  type="submit"
                   disabled={loading}
-                  style={{ ...btnPrimary, marginTop: 12, background: 'white', color: 'var(--ink)', border: '1.5px solid var(--line)' }}
+                  style={{ ...btnPrimary, opacity: loading ? 0.6 : 1 }}
                 >
-                  Resend password by email
+                  {loading ? 'Please wait…' : mode === 'login' ? 'Sign in →' : 'Continue →'}
                 </button>
-              )}
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => void onResendPassword()}
+                    disabled={loading}
+                    style={{ ...btnPrimary, marginTop: 12, background: 'white', color: 'var(--ink)', border: '1.5px solid var(--line)' }}
+                  >
+                    Resend password by email
+                  </button>
+                )}
+              </form>
             </div>
           </div>
         )}

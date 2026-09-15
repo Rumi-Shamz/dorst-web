@@ -33,7 +33,15 @@ export interface Beer {
   labelCardSrc?: string
   labelType?: 'image' | 'pdf'
   tags: ('unfiltered' | 'unpasteurised' | 'vegan')[]
+  /** Marketing fallback price; live shop uses ERP b2c_unit_price_eur_cents when set. */
   priceB2C?: number
+  /**
+   * When ERP is unreachable, only beers with shopListed !== false and priceB2C
+   * appear in /shop. Prefer configuring availability via ERP B2C price.
+   */
+  shopListed?: boolean
+  /** Matched ERP product UUID (filled at runtime by ShopPageClient). */
+  productId?: string
 }
 
 export const beers: Beer[] = [
@@ -70,6 +78,7 @@ export const beers: Beer[] = [
     labelCardSrc: '/labels/cards/lion-heart.png',
     labelType: 'image',
     tags: ['unfiltered', 'unpasteurised', 'vegan'],
+    shopListed: true,
     priceB2C: 3.20,
   },
   {
@@ -105,6 +114,7 @@ export const beers: Beer[] = [
     labelCardSrc: '/labels/cards/alma.png',
     labelType: 'image',
     tags: ['unfiltered', 'unpasteurised', 'vegan'],
+    shopListed: true,
     priceB2C: 3.20,
   },
   {
@@ -140,6 +150,7 @@ export const beers: Beer[] = [
     labelCardSrc: '/labels/cards/hippy-shake.png',
     labelType: 'image',
     tags: ['unfiltered', 'unpasteurised', 'vegan'],
+    shopListed: true,
     priceB2C: 3.40,
   },
   {
@@ -175,6 +186,7 @@ export const beers: Beer[] = [
     labelCardSrc: '/labels/cards/alexis.png',
     labelType: 'image',
     tags: ['unfiltered', 'unpasteurised', 'vegan'],
+    shopListed: true,
     priceB2C: 2.90,
   },
   {
@@ -210,7 +222,7 @@ export const beers: Beer[] = [
     labelCardSrc: '/labels/cards/pulpa-fiction.png',
     labelType: 'image',
     tags: ['unfiltered', 'unpasteurised', 'vegan'],
-    priceB2C: 3.60,
+    shopListed: false,
   },
   {
     id: 'full-breakfast-stout',
@@ -245,6 +257,7 @@ export const beers: Beer[] = [
     labelCardSrc: '/labels/cards/full-breakfast-stout.png',
     labelType: 'image',
     tags: ['unfiltered', 'unpasteurised'],
+    shopListed: true,
     priceB2C: 3.60,
   },
   {
@@ -277,7 +290,7 @@ export const beers: Beer[] = [
     active: true,
     hasLabel: false,
     tags: ['unfiltered', 'unpasteurised', 'vegan'],
-    priceB2C: 3.00,
+    shopListed: false,
   },
   {
     id: 'evrozona',
@@ -312,7 +325,7 @@ export const beers: Beer[] = [
     labelCardSrc: '/labels/cards/evrozona.png',
     labelType: 'image',
     tags: ['unfiltered', 'unpasteurised', 'vegan'],
-    priceB2C: 3.20,
+    shopListed: false,
   },
   {
     id: 'bit',
@@ -344,7 +357,7 @@ export const beers: Beer[] = [
     active: true,
     hasLabel: false,
     tags: ['unfiltered', 'unpasteurised'],
-    priceB2C: 2.80,
+    shopListed: false,
   },
   {
     id: 'wit',
@@ -376,7 +389,7 @@ export const beers: Beer[] = [
     active: true,
     hasLabel: false,
     tags: ['unfiltered', 'unpasteurised', 'vegan'],
-    priceB2C: 2.80,
+    shopListed: false,
   },
 ]
 

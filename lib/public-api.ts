@@ -42,9 +42,18 @@ export async function fetchPublicLocations(): Promise<PublicLocation[]> {
   return data.locations ?? []
 }
 
-export async function fetchPublicProducts(): Promise<PublicProduct[]> {
-  const data = await publicFetch<{ products: PublicProduct[] }>("/api/public/products")
-  return data.products ?? []
+export async function fetchPublicProducts(): Promise<{
+  products: PublicProduct[]
+  nra_store_reg_number: string | null
+}> {
+  const data = await publicFetch<{
+    products: PublicProduct[]
+    nra_store_reg_number?: string | null
+  }>("/api/public/products")
+  return {
+    products: data.products ?? [],
+    nra_store_reg_number: data.nra_store_reg_number ?? null,
+  }
 }
 
 /** Match a marketing beer to an ERP can SKU by name (and optional sku=slug). */
@@ -55,14 +64,28 @@ export function matchBeerProduct(
   const needle = beer.name.toLowerCase()
   const slug = beer.slug.toLowerCase()
 
-  const priced = products.filter((p) => p.unit_price_eur != null || p.b2c_unit_price_eur_cents != null)
-  const bySku = priced.find((p) => p.sku?.toLowerCase() === slug)
+  const priced = products.filter(
+    (p) => p.unit_price_eur != null || p.b2c_unit_price_eur_cents != null
+  )
+  const bySku = priced.find(
+    (p) =>
+      p.sku?.toLowerCase() === slug ||
+      p.sku?.toLowerCase().includes(slug.replace(/-/g, ""))
+  )
   if (bySku) return bySku
 
+  const isRetailPack = (unit: string | undefined) => {
+    const u = (unit ?? "").toLowerCase()
+    return (
+      u.includes("can") ||
+      u.startsWith("bottle_") ||
+      u === "bottle_330ml" ||
+      u === "bottle_500ml"
+    )
+  }
+
   const cans = priced.filter(
-    (p) =>
-      (p.volume_unit === "can_500ml" || p.volume_unit?.includes("can")) &&
-      p.name.toLowerCase().includes(needle)
+    (p) => isRetailPack(p.volume_unit) && p.name.toLowerCase().includes(needle)
   )
   if (cans.length === 1) return cans[0]
   if (cans.length > 1) {

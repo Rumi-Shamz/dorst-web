@@ -10,30 +10,52 @@ interface Props {
   beers: Beer[]
 }
 
+export type ShopBeer = Beer & { productId?: string; shopAvailable: boolean }
+
 export function ShopPageClient({ beers }: Props) {
   const t = useTranslations('Shop')
-  const [pricedBeers, setPricedBeers] = useState(beers)
+  const [shopBeers, setShopBeers] = useState<ShopBeer[]>(() =>
+    beers
+      .filter((b) => b.shopListed !== false && b.priceB2C != null)
+      .map((b) => ({ ...b, shopAvailable: true }))
+  )
+  const [catalogReady, setCatalogReady] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     fetchPublicProducts()
-      .then((products) => {
+      .then(({ products }) => {
         if (cancelled) return
-        setPricedBeers(
-          beers.map((beer) => {
-            const match = matchBeerProduct(beer, products)
-            const erpPrice =
-              match?.unit_price_eur ??
-              (match?.b2c_unit_price_eur_cents != null
-                ? match.b2c_unit_price_eur_cents / 100
-                : null)
-            if (erpPrice == null) return beer
-            return { ...beer, priceB2C: erpPrice }
-          })
-        )
+        const next: ShopBeer[] = []
+        for (const beer of beers) {
+          const match = matchBeerProduct(beer, products)
+          const erpPrice =
+            match?.unit_price_eur ??
+            (match?.b2c_unit_price_eur_cents != null
+              ? match.b2c_unit_price_eur_cents / 100
+              : null)
+          if (match && erpPrice != null) {
+            next.push({
+              ...beer,
+              priceB2C: erpPrice,
+              productId: match.id,
+              shopAvailable: true,
+            })
+          }
+        }
+        // ERP is source of truth for what's buyable: only priced B2C SKUs.
+        setShopBeers(next)
+        setCatalogReady(true)
       })
       .catch(() => {
-        /* keep static priceB2C fallback */
+        if (cancelled) return
+        // Offline fallback: marketing shopListed + priceB2C
+        setShopBeers(
+          beers
+            .filter((b) => b.shopListed !== false && b.priceB2C != null)
+            .map((b) => ({ ...b, shopAvailable: true }))
+        )
+        setCatalogReady(true)
       })
     return () => {
       cancelled = true
@@ -51,8 +73,13 @@ export function ShopPageClient({ beers }: Props) {
         </div>
       </section>
 
-      <ShopClient beers={pricedBeers} />
-
+      {catalogReady && shopBeers.length === 0 ? (
+        <p className="page-pad" style={{ padding: '40px 48px', color: 'var(--ink-soft)' }}>
+          {t('catalogEmpty')}
+        </p>
+      ) : (
+        <ShopClient beers={shopBeers} />
+      )}
     </div>
   )
 }

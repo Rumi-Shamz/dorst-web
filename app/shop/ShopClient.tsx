@@ -1,15 +1,14 @@
 'use client'
 
+import type { CSSProperties } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
 import type { Beer } from '@/lib/data'
 import { useLocale } from '@/components/LocaleProvider'
 import { pickBeerText } from '@/lib/locale-content'
 import { BeerLabel } from '@/components/beer/BeerLabel'
-
-const MINIMUM_CANS = 12
-const VAT_RATE = 0.20
+import { MINIMUM_CANS, VAT_RATE } from '@/lib/shop'
 
 interface Props {
   beers: Beer[]
@@ -17,109 +16,126 @@ interface Props {
 
 export function ShopClient({ beers }: Props) {
   const t = useTranslations('Shop')
+  const router = useRouter()
   const { locale } = useLocale()
-  const { cart, addToCart, removeFromCart, clearCart, totalItems } = useCart()
+  const { cart, addToCart, removeFromCart, setQuantity, totalItems } = useCart()
 
   const subtotal = beers.reduce((sum, b) => sum + (cart[b.id] ?? 0) * (b.priceB2C ?? 0), 0)
   const vat = subtotal * VAT_RATE
   const total = subtotal + vat
 
-  async function handleCheckout() {
-    if (totalItems < MINIMUM_CANS) {
-      alert(t('empty', { min: MINIMUM_CANS }))
-      return
-    }
-    const items = beers
-      .filter(b => (cart[b.id] ?? 0) > 0)
-      .map(b => ({ id: b.id, qty: cart[b.id] ?? 0 }))
-
-    alert(`Order submitted (stub):\n${JSON.stringify(items, null, 2)}\nTotal: €${total.toFixed(2)}`)
-    clearCart()
+  function handleCheckout() {
+    if (totalItems < MINIMUM_CANS) return
+    router.push('/shop/checkout/')
   }
 
   return (
     <div style={{ padding: '40px 48px 80px', display: 'grid', gridTemplateColumns: '1fr 320px', gap: 40, alignItems: 'start' }} className="shop-layout">
-      {/* Product list */}
       <div>
-        {beers.map(beer => {
+        {beers.map((beer) => {
           const beerText = pickBeerText(beer, locale)
+          const qty = cart[beer.id] ?? 0
           return (
-          <div
-            key={beer.id}
-            className="shop-product-row"
-            style={{
-              padding: '20px 0',
-              borderBottom: '1px solid var(--line)',
-            }}
-          >
-            <BeerLabel beer={beer} size="sm" variant="card" preferCard nameOverride={beerText.name} style={{ width: 56, height: 80, borderRadius: 4 }} />
+            <div
+              key={beer.id}
+              className="shop-product-row"
+              style={{
+                padding: '20px 0',
+                borderBottom: '1px solid var(--line)',
+              }}
+            >
+              <BeerLabel beer={beer} size="sm" variant="card" preferCard nameOverride={beerText.name} style={{ width: 56, height: 80, borderRadius: 4 }} />
 
-            {/* Info */}
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: 4 }}>
-                {beerText.style}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: 4 }}>
+                  {beerText.style}
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{beerText.name}</h3>
+                <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--ink-soft)' }}>
+                  {beer.abv}% · {beer.plato}° · {beer.ml.map((m) => `${m}ml`).join(' / ')}
+                </div>
               </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{beerText.name}</h3>
-              <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--ink-soft)' }}>
-                {beer.abv}% · {beer.plato}° · {beer.ml.map(m => `${m}ml`).join(' / ')}
+
+              <div style={{ textAlign: 'right', minWidth: 64 }}>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>€{beer.priceB2C?.toFixed(2)}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{t('perCan')}</div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  aria-label="Decrease quantity"
+                  onClick={() => removeFromCart(beer.id)}
+                  style={qtyBtnStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--ink)'
+                    e.currentTarget.style.background = 'var(--ink)'
+                    e.currentTarget.style.color = 'white'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--line)'
+                    e.currentTarget.style.background = 'white'
+                    e.currentTarget.style.color = 'var(--ink)'
+                  }}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={1}
+                  aria-label={`${beerText.name} quantity`}
+                  value={qty}
+                  onChange={(e) => {
+                    const raw = e.target.value
+                    if (raw === '') {
+                      setQuantity(beer.id, 0)
+                      return
+                    }
+                    setQuantity(beer.id, Number(raw))
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === '') setQuantity(beer.id, 0)
+                  }}
+                  style={{
+                    width: 56,
+                    height: 32,
+                    textAlign: 'center',
+                    fontSize: 16,
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-sans)',
+                    border: '1.5px solid var(--line)',
+                    borderRadius: 5,
+                    background: 'white',
+                    color: 'var(--ink)',
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  type="button"
+                  aria-label="Increase quantity"
+                  onClick={() => addToCart(beer.id)}
+                  style={qtyBtnStyle}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--ink)'
+                    e.currentTarget.style.background = 'var(--ink)'
+                    e.currentTarget.style.color = 'white'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--line)'
+                    e.currentTarget.style.background = 'white'
+                    e.currentTarget.style.color = 'var(--ink)'
+                  }}
+                >
+                  +
+                </button>
               </div>
             </div>
-
-            {/* Price */}
-            <div style={{ textAlign: 'right', minWidth: 64 }}>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>€{beer.priceB2C?.toFixed(2)}</div>
-              <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{t('perCan')}</div>
-            </div>
-
-            {/* Qty control */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button
-                onClick={() => removeFromCart(beer.id)}
-                style={{
-                  width: 32, height: 32,
-                  borderRadius: '50%',
-                  border: '1.5px solid var(--line)',
-                  background: 'white',
-                  fontSize: 18, fontWeight: 300,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer',
-                  lineHeight: 1,
-                  transition: 'border-color 0.2s, background 0.2s, color 0.2s',
-                  color: 'var(--ink)',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--ink)'; e.currentTarget.style.background = 'var(--ink)'; e.currentTarget.style.color = 'white' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--ink)' }}
-              >
-                −
-              </button>
-              <span style={{ fontSize: 16, fontWeight: 700, minWidth: 28, textAlign: 'center' }}>
-                {cart[beer.id] ?? 0}
-              </span>
-              <button
-                onClick={() => addToCart(beer.id)}
-                style={{
-                  width: 32, height: 32,
-                  borderRadius: '50%',
-                  border: '1.5px solid var(--line)',
-                  background: 'white',
-                  fontSize: 18, fontWeight: 300,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer',
-                  lineHeight: 1,
-                  transition: 'border-color 0.2s, background 0.2s, color 0.2s',
-                  color: 'var(--ink)',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--ink)'; e.currentTarget.style.background = 'var(--ink)'; e.currentTarget.style.color = 'white' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--ink)' }}
-              >
-                +
-              </button>
-            </div>
-          </div>
-        )})}
+          )
+        })}
       </div>
 
-      {/* Order summary */}
       <div style={{ position: 'sticky', top: 88 }}>
         <div
           style={{
@@ -139,7 +155,7 @@ export function ShopClient({ beers }: Props) {
             </p>
           ) : (
             <>
-              {beers.filter(b => (cart[b.id] ?? 0) > 0).map(b => (
+              {beers.filter((b) => (cart[b.id] ?? 0) > 0).map((b) => (
                 <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, padding: '6px 0', color: 'var(--ink-soft)' }}>
                   <span>{b.name} × {cart[b.id]}</span>
                   <span>€{((cart[b.id] ?? 0) * (b.priceB2C ?? 0)).toFixed(2)}</span>
@@ -179,6 +195,7 @@ export function ShopClient({ beers }: Props) {
           )}
 
           <button
+            type="button"
             onClick={handleCheckout}
             disabled={totalItems < MINIMUM_CANS}
             style={{
@@ -206,7 +223,24 @@ export function ShopClient({ beers }: Props) {
           </p>
         </div>
       </div>
-
     </div>
   )
+}
+
+const qtyBtnStyle: CSSProperties = {
+  width: 32,
+  height: 32,
+  borderRadius: '50%',
+  border: '1.5px solid var(--line)',
+  background: 'white',
+  fontSize: 18,
+  fontWeight: 300,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  lineHeight: 1,
+  transition: 'border-color 0.2s, background 0.2s, color 0.2s',
+  color: 'var(--ink)',
+  flexShrink: 0,
 }
