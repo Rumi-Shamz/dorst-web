@@ -56,7 +56,7 @@ export default function HomePage() {
           if (!cachedHomeVenues) setActiveVenues([])
           return
         }
-        const next = locations.slice(0, 6).map((l) => ({
+        const next = locations.slice(0, 8).map((l) => ({
           id: l.id,
           name: l.name,
           googleMapsUrl: l.maps_url,
@@ -571,53 +571,62 @@ export default function HomePage() {
       <section
         style={{
           padding: '100px 48px',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 80,
-          alignItems: 'center',
         }}
         id="locations"
         className="locations-section"
       >
         <ScrollReveal>
-          <div>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                color: 'var(--ink-soft)',
-                marginBottom: 24,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 16,
-              }}
-            >
-              {t('venuesHeading')}
-              <span style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+          <div
+            className="locations-header"
+            style={{
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'space-between',
+              gap: 32,
+              marginBottom: 48,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ flex: '1 1 320px', minWidth: 0, maxWidth: 720 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-soft)',
+                  marginBottom: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                }}
+              >
+                {t('venuesHeading')}
+                <span style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+              </div>
+
+              <h2
+                style={{
+                  fontSize: 'clamp(36px, 4vw, 52px)',
+                  fontWeight: 700,
+                  lineHeight: 1.1,
+                  letterSpacing: '-0.02em',
+                  marginBottom: 20,
+                }}
+              >
+                {t('venuesTitle', { count: activeVenues.length || '…' })}
+              </h2>
+
+              <p style={{ fontSize: 16, color: 'var(--ink-soft)', lineHeight: 1.65, margin: 0 }}>
+                {t('venuesBody')}
+              </p>
             </div>
-
-            <h2
-              style={{
-                fontSize: 'clamp(36px, 4vw, 52px)',
-                fontWeight: 700,
-                lineHeight: 1.1,
-                letterSpacing: '-0.02em',
-                marginBottom: 20,
-              }}
-            >
-              {t('venuesTitle', { count: activeVenues.length })}
-            </h2>
-
-            <p style={{ fontSize: 16, color: 'var(--ink-soft)', lineHeight: 1.65, marginBottom: 36 }}>
-              {t('venuesBody')}
-            </p>
 
             <Link
               href="/locations"
               style={{
                 display: 'inline-block',
+                flexShrink: 0,
                 border: '2px solid var(--ink)',
                 color: 'var(--ink)',
                 padding: '13px 28px',
@@ -626,6 +635,7 @@ export default function HomePage() {
                 borderRadius: 'var(--radius-pill)',
                 textDecoration: 'none',
                 transition: 'background 0.2s, color 0.2s',
+                alignSelf: 'flex-end',
               }}
             >
               {t('venuesCta')}
@@ -634,46 +644,59 @@ export default function HomePage() {
         </ScrollReveal>
 
         <ScrollReveal delay={2}>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {activeVenues.map(venue => (
+          <div
+            className="locations-card-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+              gap: 16,
+            }}
+          >
+            {activeVenues.map((venue) => (
               <a
                 key={venue.id}
                 href={venue.googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="venue-row"
+                className="location-card"
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '18px 0',
-                  borderBottom: '1px solid var(--line)',
+                  flexDirection: 'column',
+                  gap: 12,
+                  padding: '22px 20px',
+                  border: '1.5px solid var(--line)',
+                  borderRadius: 2,
+                  background: 'var(--paper)',
                   textDecoration: 'none',
                   color: 'var(--ink)',
-                  transition: 'padding-left 0.2s',
-                  gap: 12,
+                  transition: 'border-color 0.2s, transform 0.2s',
+                  minHeight: 120,
                 }}
-                onMouseEnter={e => (e.currentTarget.style.paddingLeft = '8px')}
-                onMouseLeave={e => (e.currentTarget.style.paddingLeft = '0')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--ink)'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--line)'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}
               >
-                <span style={{ fontSize: 16, fontWeight: 500 }}>{venue.name}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      color: 'var(--ink-soft)',
-                      background: 'rgba(14,14,16,0.06)',
-                      padding: '4px 10px',
-                      borderRadius: 100,
-                    }}
-                  >
-                    {venue.subtitle}
-                  </span>
-                  <span style={{ opacity: 0.3, fontSize: 16 }}>→</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                  <span style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.25 }}>{venue.name}</span>
+                  <span style={{ opacity: 0.35, fontSize: 16, flexShrink: 0 }}>→</span>
                 </div>
+                <span
+                  style={{
+                    marginTop: 'auto',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-soft)',
+                  }}
+                >
+                  {venue.subtitle}
+                </span>
               </a>
             ))}
           </div>

@@ -4,10 +4,16 @@ import { ShopPageClient } from './ShopPageClient'
 
 export const metadata: Metadata = {
   title: 'Shop — Dorst Brewery',
-  description: 'Order Dorst craft beer online. Cans delivered to Sofia. Minimum 12 cans per order.',
+  description: 'Order Dorst craft beer online. Cans delivered to Sofia. Minimum 20 cans per order.',
 }
 
 export default function ShopPage() {
-  const shopBeers = beers.filter(b => b.active && (b.format === 'can' || b.format === 'both') && b.priceB2C)
+  const shopBeers = beers.filter(
+    (b) =>
+      b.active &&
+      (b.format === 'can' || b.format === 'both') &&
+      b.shopListed !== false &&
+      b.priceB2C != null
+  )
   return <ShopPageClient beers={shopBeers} />
 }

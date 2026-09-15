@@ -130,7 +130,9 @@ export function BeerDetailClient({ beer, relatedBeers }: Props) {
               </div>
             )}
 
-            {(beer.format === 'can' || beer.format === 'both') && beer.priceB2C && (
+            {(beer.format === 'can' || beer.format === 'both') &&
+              beer.shopListed !== false &&
+              beer.priceB2C && (
               <Link
                 href={`/shop?beer=${beer.slug}`}
                 style={{

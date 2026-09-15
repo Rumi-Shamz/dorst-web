@@ -83,10 +83,51 @@ async function partnerFetch<T>(
   const body = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new Error(body?.error?.message ?? `Request failed (${res.status})`);
+    throw new Error(friendlyPartnerError(body?.error?.code, body?.error?.message, res.status));
   }
 
   return body as T;
+}
+
+/** Map cryptic ERP/PostgREST errors to partner-facing copy. */
+export function friendlyPartnerError(
+  code: string | undefined,
+  message: string | undefined,
+  status: number
+): string {
+  const raw = (message ?? "").trim();
+  const lower = raw.toLowerCase();
+
+  if (
+    code === "ACCOUNT_AMBIGUOUS" ||
+    lower.includes("multiple (or no) rows") ||
+    lower.includes("json object requested") ||
+    lower.includes("linked to more than one company")
+  ) {
+    return (
+      "This email is linked to more than one company. " +
+      "Each company needs its own login email — ask Dorst support to untangle the accounts, " +
+      "or resend the password using a unique email for this ЕИК."
+    );
+  }
+
+  if (
+    code === "LOOKUP_FAILED" ||
+    lower.includes("unexpected end of json") ||
+    lower.includes("is not valid json") ||
+    lower.includes("trade registry")
+  ) {
+    if (
+      lower.includes("not found") ||
+      lower.includes("unexpected end of json") ||
+      lower.includes("is not valid json") ||
+      lower.includes("no company name")
+    ) {
+      return "No company found in the Trade Registry for that ЕИК. Check the number and try again.";
+    }
+  }
+
+  return raw || `Request failed (${status})`;
 }
 
 export function volumeUnitLabel(unit: string): string {
