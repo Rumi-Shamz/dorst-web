@@ -19,6 +19,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const isB2B = pathname.startsWith('/partners')
+  // Bare gate chrome only — Navbar Link prefetch of /, /beers, etc. would cache
+  // middleware's redirect-to-gate and break soft navigation after Yes in Chrome/Safari.
+  const isAgeGate = pathname.startsWith('/age-gate')
 
   // Client fallback when middleware is unavailable (static GitHub Pages export).
   // On Vercel / local, middleware still runs first; this is a no-op if already verified.
@@ -30,7 +33,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     router.replace(`/age-gate/?return=${encodeURIComponent(returnPath)}`)
   }, [pathname, router])
 
-  if (isB2B) {
+  if (isB2B || isAgeGate) {
     return <>{children}</>
   }
 

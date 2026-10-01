@@ -7,9 +7,17 @@ import { WhaleSVG } from '@/components/whale/WhaleSVG'
 
 const COOKIE = 'dorst-age-verified'
 
+/** Same-origin relative path only (blocks open redirects). */
 function getReturnPath() {
   if (typeof window === 'undefined') return '/'
-  return new URLSearchParams(window.location.search).get('return') ?? '/'
+  const raw = new URLSearchParams(window.location.search).get('return') ?? '/'
+  if (!raw.startsWith('/') || raw.startsWith('//')) return '/'
+  return raw
+}
+
+function setVerifiedCookie() {
+  const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : ''
+  document.cookie = `${COOKIE}=1; max-age=31536000; path=/; samesite=lax${secure}`
 }
 
 export function AgeGate() {
@@ -18,12 +26,19 @@ export function AgeGate() {
 
   useEffect(() => {
     const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE}=([^;]*)`))
-    if (match?.[1] === '1') router.replace(getReturnPath())
-  }, [router])
+    if (match?.[1] === '1') {
+      // Hard navigate so middleware re-runs with the cookie (soft nav can reuse a
+      // prefetched redirect-to-gate from Chrome/Safari Link prefetch).
+      window.location.replace(getReturnPath())
+    }
+  }, [])
 
   function handleYes() {
-    document.cookie = `${COOKIE}=1; max-age=31536000; path=/; samesite=lax`
-    router.push(getReturnPath())
+    setVerifiedCookie()
+    // Hard navigation is required: Navbar Link prefetch caches middleware's
+    // redirect-to-gate for /, /beers, etc. router.push then reuses that cache
+    // in Chrome/Safari and never leaves the gate. Firefox prefetches less.
+    window.location.assign(getReturnPath())
   }
 
   function handleNo() {
@@ -62,6 +77,7 @@ export function AgeGate() {
 
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', opacity: 0, animation: 'fadeUp 0.8s 0.9s forwards' }}>
         <button
+          type="button"
           onClick={handleYes}
           style={{
             padding: '14px 36px',
@@ -81,6 +97,7 @@ export function AgeGate() {
         </button>
 
         <button
+          type="button"
           onClick={handleNo}
           style={{
             padding: '14px 36px',
