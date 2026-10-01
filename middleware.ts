@@ -32,7 +32,12 @@ export function middleware(request: NextRequest) {
   // Redirect to age gate, preserving the original URL as a return path
   const gateUrl = new URL('/age-gate', request.url)
   gateUrl.searchParams.set('return', pathname)
-  return NextResponse.redirect(gateUrl)
+  const response = NextResponse.redirect(gateUrl)
+  // Prevent Next from caching this redirect for Link prefetch / soft nav
+  // (otherwise Yes → router.push reuses a stale redirect after the cookie is set).
+  response.headers.set('x-middleware-cache', 'no-cache')
+  response.headers.set('Cache-Control', 'no-store')
+  return response
 }
 
 export const config = {
