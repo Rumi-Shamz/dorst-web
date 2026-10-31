@@ -56,6 +56,8 @@ export async function fetchPublicProducts(): Promise<{
   }
 }
 
+const words = (s: string) => s.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+
 /** Match a marketing beer to an ERP can SKU by name (and optional sku=slug). */
 export function matchBeerProduct(
   beer: { name: string; slug: string },
@@ -63,6 +65,14 @@ export function matchBeerProduct(
 ): PublicProduct | null {
   const needle = beer.name.toLowerCase()
   const slug = beer.slug.toLowerCase()
+  // ERP names split the beer name with dashes ("Full Breakfast - Stout - 500ml can"),
+  // so also accept every word of the marketing name appearing as a word.
+  const needleWords = words(beer.name)
+  const nameMatches = (name: string) => {
+    if (name.toLowerCase().includes(needle)) return true
+    const have = new Set(words(name))
+    return needleWords.length > 0 && needleWords.every((w) => have.has(w))
+  }
 
   const priced = products.filter(
     (p) => p.unit_price_eur != null || p.b2c_unit_price_eur_cents != null
@@ -85,12 +95,12 @@ export function matchBeerProduct(
   }
 
   const cans = priced.filter(
-    (p) => isRetailPack(p.volume_unit) && p.name.toLowerCase().includes(needle)
+    (p) => isRetailPack(p.volume_unit) && nameMatches(p.name)
   )
   if (cans.length === 1) return cans[0]
   if (cans.length > 1) {
     return cans.sort((a, b) => a.name.length - b.name.length)[0]
   }
 
-  return priced.find((p) => p.name.toLowerCase().includes(needle)) ?? null
+  return priced.find((p) => nameMatches(p.name)) ?? null
 }
