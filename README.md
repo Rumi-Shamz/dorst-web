@@ -34,6 +34,18 @@ Partner portal lives at **https://dorst.top/partners/** and calls the ERP at `ap
 
 Partner portal (`/partners`) authenticates against the ERP via `NEXT_PUBLIC_ERP_API_URL` (EIK + emailed password). That value is the **ERP website origin** (local `http://localhost:<erp-port>`, production `https://app.dorst.top`). Put it in `dorst-web/.env.local` for local, and as a Vercel env for `dorst.top`. Tracking at `/partners/tracking` uses the partner session.
 
+### Staging (Vercel Preview → staging ERP)
+
+Preview deployments are the staging website: they call the **staging** ERP, never `app.dorst.top`.
+
+1. Vercel → this project → Settings → Environment Variables, scope **Preview** only:
+   - `NEXT_PUBLIC_ERP_API_URL=https://dorst-erp-crm.vercel.app`
+   - `NEXT_PUBLIC_SANDBOX=1` (sandbox banner + noindex; ignored on production builds)
+2. Create a long-lived `staging` branch and give it a stable domain: Settings → Domains → add e.g. `staging.dorst.top`, **Git Branch** = `staging`.
+3. In the ERP's Vercel **Preview** env, add that origin to `PARTNER_CORS_ORIGINS` and set `PARTNER_PORTAL_LOGIN_URL` to `<origin>/partners/`, then redeploy the ERP staging.
+4. If Deployment Protection is on for previews, allow the staging domain (or management cannot open it without a Vercel login).
+5. B2C checkout uses Turnstile: add the staging domain to the widget's allowed hostnames.
+
 ### GitHub Pages (static preview only)
 
 A workflow builds a **static export** for preview/demo. API routes and middleware do not run on Pages.

@@ -5,6 +5,8 @@ import './globals.css'
 import { CartProvider } from '@/contexts/CartContext'
 import { LocaleProvider } from '@/components/LocaleProvider'
 import { SiteShell } from './SiteShell'
+import { SandboxBanner } from '@/components/SandboxBanner'
+import { isSandbox } from '@/lib/sandbox'
 
 const montserrat = Montserrat({
   subsets: ['latin', 'cyrillic'],
@@ -31,18 +33,21 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
+  // Sandbox builds must never be indexed.
+  ...(isSandbox ? { robots: { index: false, follow: false } } : {}),
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="bg" className={`${montserrat.variable} ${anonymousPro.variable}`}>
-      <body>
+      <body className={isSandbox ? 'pb-7' : undefined}>
         <LocaleProvider>
           <CartProvider>
             <SiteShell>{children}</SiteShell>
           </CartProvider>
         </LocaleProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        <SandboxBanner />
+        {process.env.NODE_ENV === 'production' && !isSandbox && <Analytics />}
       </body>
     </html>
   )
