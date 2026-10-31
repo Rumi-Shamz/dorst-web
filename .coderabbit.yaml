@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+
+tone_instructions: >-
+  Prioritize correctness, accessibility, and maintainability for a public brewery
+  marketing site. Prefer concrete Next.js App Router feedback; flag age-gate,
+  checkout, and partner-proxy regressions; skip formatter-covered style nits.
+
+reviews:
+  profile: assertive
+  high_level_summary: true
+  path_instructions:
+    - path: "app/api/**"
+      instructions: |
+        API routes proxy or shape public traffic toward the ERP. Validate inputs,
+        avoid leaking ERP internals/errors, and preserve Turnstile/age-gate assumptions
+        expected by upstream. Fail closed when ERP_API_URL or captcha config is missing.
+    - path: "app/shop/**"
+      instructions: |
+        B2C checkout UX: keep pricing/consent/CAPTCHA flow intact. Flag client-side
+        trust of prices or stock, missing loading/error states, and broken handoff
+        to the ERP order API.
+    - path: "app/(b2b)/**"
+      instructions: |
+        Partner portal UI: never expose other partners' data; handle auth session
+        expiry cleanly; keep calls scoped via NEXT_PUBLIC_ERP_API_URL.
+    - path: "components/age-gate/**"
+      instructions: |
+        Age-gate is legally sensitive. Prefer fail-closed behavior, durable consent
+        storage assumptions, and no accidental bypass via static/export paths.
+    - path: "components/**"
+      instructions: |
+        Prefer existing Dorst brand/UI patterns. Flag accessibility regressions,
+        layout CLS risks with brand imagery, and client components that embed secrets.
+    - path: "middleware.ts"
+      instructions: |
+        Middleware runs on the edge for routing/age-gate. Keep it lean; avoid heavy
+        work; ensure exclusions (e.g. brand-book) stay intentional and documented.
+    - path: "messages/**"
+      instructions: |
+        i18n copy: keep BG/EN keys in sync for changed strings; flag missing keys
+        or hardcoded user-facing text that should live in messages.
+    - path: ".github/workflows/**"
+      instructions: |
+        Distinguish Vercel production vs GitHub Pages static preview. Flag env/basePath
+        mistakes (GITHUB_PAGES) that would break dorst.top.
