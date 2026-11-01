@@ -1,26 +1,15 @@
 import type { Metadata } from 'next'
-import { Montserrat, Anonymous_Pro } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+// Fonts are self-hosted (no build-time fetch from Google Fonts).
+import '@fontsource-variable/montserrat'
+import '@fontsource/anonymous-pro/400.css'
+import '@fontsource/anonymous-pro/700.css'
 import './globals.css'
 import { CartProvider } from '@/contexts/CartContext'
 import { LocaleProvider } from '@/components/LocaleProvider'
 import { SiteShell } from './SiteShell'
 import { SandboxBanner } from '@/components/SandboxBanner'
 import { isSandbox } from '@/lib/sandbox'
-
-const montserrat = Montserrat({
-  subsets: ['latin', 'cyrillic'],
-  weight: ['400', '500', '600', '700', '800', '900'],
-  variable: '--font-montserrat',
-  display: 'swap',
-})
-
-const anonymousPro = Anonymous_Pro({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-anonymous-pro',
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: 'Dorst — Drink Well, Drink Whale',
@@ -39,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="bg" className={`${montserrat.variable} ${anonymousPro.variable}`}>
+    <html lang="bg">
       <body className={isSandbox ? 'pb-7' : undefined}>
         <LocaleProvider>
           <CartProvider>
