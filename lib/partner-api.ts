@@ -275,6 +275,20 @@ export async function fetchPartnerMe() {
   }>("/me");
 }
 
+export type PlaceSuggestion = { place_id: string; name: string; address: string };
+
+export async function searchPartnerPlaces(query: string) {
+  return partnerFetch<{ places: PlaceSuggestion[] }>(`/places/search?q=${encodeURIComponent(query)}`);
+}
+
+/** Sets the delivery address when none is on file, from a Maps link or a picked place. */
+export async function setPartnerDeliveryAddress(body: { maps_url: string } | { place_id: string }) {
+  return partnerFetch<{
+    delivery_address: Record<string, string>;
+    place: { name: string; formatted_address: string | null; maps_url: string };
+  }>("/me/delivery-address", { method: "POST", body: JSON.stringify(body) });
+}
+
 export async function fetchPartnerProducts() {
   const data = await partnerFetch<{ products: PartnerProduct[] }>("/products");
   return {
