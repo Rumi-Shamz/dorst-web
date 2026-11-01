@@ -31,7 +31,7 @@
   --b-wit:      #E2C24E;
 
   /* Typography */
-  --font-sans: 'Montserrat', system-ui, sans-serif;
+  --font-sans: 'Montserrat Variable', system-ui, sans-serif;
   --font-mono: 'Anonymous Pro', ui-monospace, monospace;
 
   /* Radii — crisp, never silicon-valley */
@@ -110,9 +110,9 @@
   --color-input:                var(--input);
   --color-ring:                 var(--ring);
 
-  /* Font families (resolved via next/font CSS vars) */
-  --font-sans: var(--font-montserrat), system-ui, sans-serif;
-  --font-mono: var(--font-anonymous-pro), ui-monospace, monospace;
+  /* Font families (self-hosted via @fontsource, imported in app/layout.tsx) */
+  --font-sans: 'Montserrat Variable', system-ui, sans-serif;
+  --font-mono: 'Anonymous Pro', ui-monospace, monospace;
 
   /* Radius tokens */
   --radius-sm: var(--radius-xs);
