@@ -391,6 +391,15 @@ export function B2BPortalClient() {
               <Link href="/partners/tracking" style={{ fontSize: 13, color: '#706E66', textDecoration: 'none' }}>
                 Track order
               </Link>
+              <a
+                href="/brand-book/index.html"
+                target="_blank"
+                rel="noreferrer"
+                title={t('brandBookHint')}
+                style={{ fontSize: 13, color: '#706E66', textDecoration: 'none' }}
+              >
+                {t('brandBook')} ↗
+              </a>
               <button
                 type="button"
                 onClick={() => { clearPartnerSession(); setLoggedIn(false); setShowHistory(false); setScreen(1) }}
