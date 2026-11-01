@@ -39,7 +39,7 @@ Partner portal (`/partners`) authenticates against the ERP via `NEXT_PUBLIC_ERP_
 Preview deployments are the staging website: they call the **staging** ERP, never `app.dorst.top`.
 
 1. Vercel → this project → Settings → Environment Variables, scope **Preview** only:
-   - `NEXT_PUBLIC_ERP_API_URL=https://dorst-erp-crm.vercel.app`
+   - `NEXT_PUBLIC_ERP_API_URL=https://dorst-erp-crm-staging.vercel.app`
    - `NEXT_PUBLIC_SANDBOX=1` (sandbox banner + noindex; ignored on production builds)
 2. Create a long-lived `staging` branch and give it a stable domain: Settings → Domains → add e.g. `staging.dorst.top`, **Git Branch** = `staging`.
 3. In the ERP's Vercel **Preview** env, add that origin to `PARTNER_CORS_ORIGINS` and set `PARTNER_PORTAL_LOGIN_URL` to `<origin>/partners/`, then redeploy the ERP staging.
