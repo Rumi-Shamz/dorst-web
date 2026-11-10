@@ -51,7 +51,8 @@ export function B2BPortalClient() {
   const [passwordInput, setPasswordInput] = useState('')
   const [formError, setFormError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [passwordSent, setPasswordSent] = useState(false)
+  // Email the password was last sent to; drives the success banner on the login screen.
+  const [passwordSentTo, setPasswordSentTo] = useState('')
   const [registryDraft, setRegistryDraft] = useState<RegistryDraft | null>(null)
   const [companyName, setCompanyName] = useState('')
   const [mapsUrl, setMapsUrl] = useState('')
@@ -65,6 +66,7 @@ export function B2BPortalClient() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank' | null>(null)
   const [addressConfirmed, setAddressConfirmed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [checkingStock, setCheckingStock] = useState(false)
   const [confirmOrder, setConfirmOrder] = useState('')
   const [confirmInvoice, setConfirmInvoice] = useState('')
   const [confirmInvoiceId, setConfirmInvoiceId] = useState('')
@@ -129,7 +131,7 @@ export function B2BPortalClient() {
     try {
       const res = await registerLookup(eikInput.trim(), emailInput.trim())
       if (res.status === 'password_sent') {
-        setPasswordSent(true)
+        setPasswordSentTo(emailInput.trim())
         setCompanyName(res.company_name ?? '')
         setMode('login')
       } else if (res.draft) {
@@ -166,7 +168,7 @@ export function B2BPortalClient() {
         vat_number: registryDraft.vat_number ?? undefined,
         confirm_details: true,
       })
-      setPasswordSent(true)
+      setPasswordSentTo(emailInput.trim())
       setMode('login')
       setScreen(1)
     } catch (err) {
@@ -198,10 +200,11 @@ export function B2BPortalClient() {
       setFormError('Enter EIK and email to resend your password')
       return
     }
+    setPasswordSentTo('')
     setLoading(true)
     try {
       await resendPartnerPassword(eikInput.trim(), emailInput.trim())
-      setPasswordSent(true)
+      setPasswordSentTo(emailInput.trim())
       setMode('login')
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Could not resend password')
@@ -225,32 +228,45 @@ export function B2BPortalClient() {
     }
   }
 
-  async function onQtyBlur(productId: string) {
-    const requested = qty[productId] ?? 0
+  /**
+   * Checks stock for one line and clamps its quantity. Returns the quantity
+   * that stays in the cart (0 when out of stock).
+   */
+  async function applyStockCheck(productId: string, requested: number): Promise<number> {
     if (requested <= 0) {
       setStockNotes((prev) => {
         const next = { ...prev }
         delete next[productId]
         return next
       })
-      return
+      return 0
     }
+    const res = await checkAvailability(productId, requested)
+    const name = products.find((p) => p.id === productId)?.name ?? 'Product'
+    if (res.out_of_stock) {
+      dispatchQty({ type: 'SET', id: productId, qty: 0 })
+      setStockNotes((prev) => ({ ...prev, [productId]: `${name} is out of stock — removed from your order.` }))
+      return 0
+    }
+    if (res.limited) {
+      dispatchQty({ type: 'SET', id: productId, qty: res.adjusted_quantity })
+      setStockNotes((prev) => ({
+        ...prev,
+        [productId]: `${name}: only ${res.available} available — quantity adjusted to ${res.adjusted_quantity}.`,
+      }))
+      return res.adjusted_quantity
+    }
+    setStockNotes((prev) => {
+      const next = { ...prev }
+      delete next[productId]
+      return next
+    })
+    return requested
+  }
+
+  async function onQtyBlur(productId: string) {
     try {
-      const res = await checkAvailability(productId, requested)
-      if (res.limited || res.out_of_stock) {
-        dispatchQty({ type: 'SET', id: productId, qty: res.adjusted_quantity })
-        const name = products.find((p) => p.id === productId)?.name ?? 'Product'
-        setStockNotes((prev) => ({
-          ...prev,
-          [productId]: `${name}: only ${res.available} available — quantity adjusted to ${res.adjusted_quantity}.`,
-        }))
-      } else {
-        setStockNotes((prev) => {
-          const next = { ...prev }
-          delete next[productId]
-          return next
-        })
-      }
+      await applyStockCheck(productId, qty[productId] ?? 0)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Stock check failed')
     }
@@ -270,13 +286,28 @@ export function B2BPortalClient() {
     }
   }
 
-  function proceedToPayment() {
-    if (!products.some((p) => (qty[p.id] ?? 0) > 0)) {
+  // Re-checks stock for every line before payment, so a stock clamp can't
+  // land after the partner has moved on and leave an empty order.
+  async function proceedToPayment() {
+    const wanted = products.filter((p) => (qty[p.id] ?? 0) > 0)
+    if (wanted.length === 0) {
       setFormError('Add at least one product')
       return
     }
     setFormError('')
-    setScreen(4)
+    setCheckingStock(true)
+    try {
+      const kept = await Promise.all(wanted.map((p) => applyStockCheck(p.id, qty[p.id] ?? 0)))
+      if (!kept.some((q) => q > 0)) {
+        setFormError('The products you chose are out of stock. Pick other products to continue.')
+        return
+      }
+      setScreen(4)
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Stock check failed')
+    } finally {
+      setCheckingStock(false)
+    }
   }
 
   async function submitOrder() {
@@ -287,6 +318,11 @@ export function B2BPortalClient() {
       const lines = products
         .filter((p) => (qty[p.id] ?? 0) > 0)
         .map((p) => ({ product_id: p.id, quantity: qty[p.id] ?? 0 }))
+      if (lines.length === 0) {
+        setFormError('Your order is empty — the products were out of stock. Go back and pick other products.')
+        setScreen(3)
+        return
+      }
 
       const result = await placePartnerOrder({
         lines,
@@ -437,9 +473,51 @@ export function B2BPortalClient() {
         {screen === 1 && (
           <div>
             <h1 style={{ fontSize: 36, fontWeight: 700, marginBottom: 10 }}>{mode === 'login' ? 'Partner login' : 'Partner access'}</h1>
-            <p style={{ fontSize: 15, color: '#706E66', marginBottom: 32 }}>
-              {passwordSent ? 'Password sent — check your email and sign in.' : 'Enter your company EIK and email to get started.'}
+            <p style={{ fontSize: 15, color: '#706E66', marginBottom: passwordSentTo ? 20 : 32 }}>
+              {passwordSentTo ? 'Check your email, then sign in with your EIK and the new password.' : 'Enter your company EIK and email to get started.'}
             </p>
+            {passwordSentTo && (
+              <div
+                role="status"
+                aria-live="polite"
+                style={{
+                  display: 'flex',
+                  gap: 14,
+                  alignItems: 'flex-start',
+                  background: '#ECFDF3',
+                  border: '1.5px solid #6CC59A',
+                  borderRadius: 10,
+                  padding: '16px 20px',
+                  marginBottom: 24,
+                  color: '#14532D',
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    flexShrink: 0,
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: '#16A34A',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 15,
+                    fontWeight: 700,
+                  }}
+                >
+                  ✓
+                </span>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Password sent</div>
+                  <div style={{ fontSize: 14, lineHeight: 1.5 }}>
+                    We emailed a new password to <strong style={{ wordBreak: 'break-all' }}>{passwordSentTo}</strong>. It can take a minute to arrive; check your spam folder too.
+                  </div>
+                </div>
+              </div>
+            )}
             <div style={{ background: 'white', border: '1.5px solid var(--line)', borderRadius: 10, padding: 44 }}>
               <WhaleSVG size="nav" style={{ marginBottom: 28 } as React.CSSProperties} />
               <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
@@ -729,7 +807,13 @@ export function B2BPortalClient() {
                 <span>Total</span><span>€{(totalCents / 100).toFixed(2)}</span>
               </div>
             </div>
-            <button onClick={proceedToPayment} style={{ ...btnPrimary, marginTop: 24 }}>Continue to payment →</button>
+            <button
+              onClick={() => void proceedToPayment()}
+              disabled={checkingStock}
+              style={{ ...btnPrimary, marginTop: 24, opacity: checkingStock ? 0.6 : 1 }}
+            >
+              {checkingStock ? 'Checking stock…' : 'Continue to payment →'}
+            </button>
           </div>
         )}
 
