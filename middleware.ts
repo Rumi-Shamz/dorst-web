@@ -10,6 +10,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/age-gate') ||
     pathname.startsWith('/partners') ||
     pathname.startsWith('/brand-book') ||
+    pathname.startsWith('/privacy') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||

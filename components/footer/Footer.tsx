@@ -68,9 +68,13 @@ export function Footer() {
         <div>
           <h4 className="site-footer-heading">{t('sectionLegal')}</h4>
           <ul className="site-footer-links">
-            {[t('privacy'), t('terms'), t('cookies')].map(label => (
+            {[
+              { label: t('privacy'), href: '/privacy/' },
+              { label: t('terms'), href: '#' },
+              { label: t('cookies'), href: '/privacy/' },
+            ].map(({ label, href }) => (
               <li key={label}>
-                <Link href="#" className="site-footer-link">
+                <Link href={href} className="site-footer-link">
                   {label}
                 </Link>
               </li>
