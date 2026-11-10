@@ -66,6 +66,7 @@ export function B2BPortalClient() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank' | null>(null)
   const [addressConfirmed, setAddressConfirmed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [checkingStock, setCheckingStock] = useState(false)
   const [confirmOrder, setConfirmOrder] = useState('')
   const [confirmInvoice, setConfirmInvoice] = useState('')
   const [confirmInvoiceId, setConfirmInvoiceId] = useState('')
@@ -227,32 +228,45 @@ export function B2BPortalClient() {
     }
   }
 
-  async function onQtyBlur(productId: string) {
-    const requested = qty[productId] ?? 0
+  /**
+   * Checks stock for one line and clamps its quantity. Returns the quantity
+   * that stays in the cart (0 when out of stock).
+   */
+  async function applyStockCheck(productId: string, requested: number): Promise<number> {
     if (requested <= 0) {
       setStockNotes((prev) => {
         const next = { ...prev }
         delete next[productId]
         return next
       })
-      return
+      return 0
     }
+    const res = await checkAvailability(productId, requested)
+    const name = products.find((p) => p.id === productId)?.name ?? 'Product'
+    if (res.out_of_stock) {
+      dispatchQty({ type: 'SET', id: productId, qty: 0 })
+      setStockNotes((prev) => ({ ...prev, [productId]: `${name} is out of stock — removed from your order.` }))
+      return 0
+    }
+    if (res.limited) {
+      dispatchQty({ type: 'SET', id: productId, qty: res.adjusted_quantity })
+      setStockNotes((prev) => ({
+        ...prev,
+        [productId]: `${name}: only ${res.available} available — quantity adjusted to ${res.adjusted_quantity}.`,
+      }))
+      return res.adjusted_quantity
+    }
+    setStockNotes((prev) => {
+      const next = { ...prev }
+      delete next[productId]
+      return next
+    })
+    return requested
+  }
+
+  async function onQtyBlur(productId: string) {
     try {
-      const res = await checkAvailability(productId, requested)
-      if (res.limited || res.out_of_stock) {
-        dispatchQty({ type: 'SET', id: productId, qty: res.adjusted_quantity })
-        const name = products.find((p) => p.id === productId)?.name ?? 'Product'
-        setStockNotes((prev) => ({
-          ...prev,
-          [productId]: `${name}: only ${res.available} available — quantity adjusted to ${res.adjusted_quantity}.`,
-        }))
-      } else {
-        setStockNotes((prev) => {
-          const next = { ...prev }
-          delete next[productId]
-          return next
-        })
-      }
+      await applyStockCheck(productId, qty[productId] ?? 0)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Stock check failed')
     }
@@ -272,13 +286,28 @@ export function B2BPortalClient() {
     }
   }
 
-  function proceedToPayment() {
-    if (!products.some((p) => (qty[p.id] ?? 0) > 0)) {
+  // Re-checks stock for every line before payment, so a stock clamp can't
+  // land after the partner has moved on and leave an empty order.
+  async function proceedToPayment() {
+    const wanted = products.filter((p) => (qty[p.id] ?? 0) > 0)
+    if (wanted.length === 0) {
       setFormError('Add at least one product')
       return
     }
     setFormError('')
-    setScreen(4)
+    setCheckingStock(true)
+    try {
+      const kept = await Promise.all(wanted.map((p) => applyStockCheck(p.id, qty[p.id] ?? 0)))
+      if (!kept.some((q) => q > 0)) {
+        setFormError('The products you chose are out of stock. Pick other products to continue.')
+        return
+      }
+      setScreen(4)
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Stock check failed')
+    } finally {
+      setCheckingStock(false)
+    }
   }
 
   async function submitOrder() {
@@ -289,6 +318,11 @@ export function B2BPortalClient() {
       const lines = products
         .filter((p) => (qty[p.id] ?? 0) > 0)
         .map((p) => ({ product_id: p.id, quantity: qty[p.id] ?? 0 }))
+      if (lines.length === 0) {
+        setFormError('Your order is empty — the products were out of stock. Go back and pick other products.')
+        setScreen(3)
+        return
+      }
 
       const result = await placePartnerOrder({
         lines,
@@ -773,7 +807,13 @@ export function B2BPortalClient() {
                 <span>Total</span><span>€{(totalCents / 100).toFixed(2)}</span>
               </div>
             </div>
-            <button onClick={proceedToPayment} style={{ ...btnPrimary, marginTop: 24 }}>Continue to payment →</button>
+            <button
+              onClick={() => void proceedToPayment()}
+              disabled={checkingStock}
+              style={{ ...btnPrimary, marginTop: 24, opacity: checkingStock ? 0.6 : 1 }}
+            >
+              {checkingStock ? 'Checking stock…' : 'Continue to payment →'}
+            </button>
           </div>
         )}
 
