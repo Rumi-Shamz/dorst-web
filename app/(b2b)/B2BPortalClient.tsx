@@ -51,7 +51,8 @@ export function B2BPortalClient() {
   const [passwordInput, setPasswordInput] = useState('')
   const [formError, setFormError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [passwordSent, setPasswordSent] = useState(false)
+  // Email the password was last sent to; drives the success banner on the login screen.
+  const [passwordSentTo, setPasswordSentTo] = useState('')
   const [registryDraft, setRegistryDraft] = useState<RegistryDraft | null>(null)
   const [companyName, setCompanyName] = useState('')
   const [mapsUrl, setMapsUrl] = useState('')
@@ -129,7 +130,7 @@ export function B2BPortalClient() {
     try {
       const res = await registerLookup(eikInput.trim(), emailInput.trim())
       if (res.status === 'password_sent') {
-        setPasswordSent(true)
+        setPasswordSentTo(emailInput.trim())
         setCompanyName(res.company_name ?? '')
         setMode('login')
       } else if (res.draft) {
@@ -166,7 +167,7 @@ export function B2BPortalClient() {
         vat_number: registryDraft.vat_number ?? undefined,
         confirm_details: true,
       })
-      setPasswordSent(true)
+      setPasswordSentTo(emailInput.trim())
       setMode('login')
       setScreen(1)
     } catch (err) {
@@ -198,10 +199,11 @@ export function B2BPortalClient() {
       setFormError('Enter EIK and email to resend your password')
       return
     }
+    setPasswordSentTo('')
     setLoading(true)
     try {
       await resendPartnerPassword(eikInput.trim(), emailInput.trim())
-      setPasswordSent(true)
+      setPasswordSentTo(emailInput.trim())
       setMode('login')
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Could not resend password')
@@ -437,9 +439,51 @@ export function B2BPortalClient() {
         {screen === 1 && (
           <div>
             <h1 style={{ fontSize: 36, fontWeight: 700, marginBottom: 10 }}>{mode === 'login' ? 'Partner login' : 'Partner access'}</h1>
-            <p style={{ fontSize: 15, color: '#706E66', marginBottom: 32 }}>
-              {passwordSent ? 'Password sent — check your email and sign in.' : 'Enter your company EIK and email to get started.'}
+            <p style={{ fontSize: 15, color: '#706E66', marginBottom: passwordSentTo ? 20 : 32 }}>
+              {passwordSentTo ? 'Check your email, then sign in with your EIK and the new password.' : 'Enter your company EIK and email to get started.'}
             </p>
+            {passwordSentTo && (
+              <div
+                role="status"
+                aria-live="polite"
+                style={{
+                  display: 'flex',
+                  gap: 14,
+                  alignItems: 'flex-start',
+                  background: '#ECFDF3',
+                  border: '1.5px solid #6CC59A',
+                  borderRadius: 10,
+                  padding: '16px 20px',
+                  marginBottom: 24,
+                  color: '#14532D',
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    flexShrink: 0,
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: '#16A34A',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 15,
+                    fontWeight: 700,
+                  }}
+                >
+                  ✓
+                </span>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Password sent</div>
+                  <div style={{ fontSize: 14, lineHeight: 1.5 }}>
+                    We emailed a new password to <strong style={{ wordBreak: 'break-all' }}>{passwordSentTo}</strong>. It can take a minute to arrive; check your spam folder too.
+                  </div>
+                </div>
+              </div>
+            )}
             <div style={{ background: 'white', border: '1.5px solid var(--line)', borderRadius: 10, padding: 44 }}>
               <WhaleSVG size="nav" style={{ marginBottom: 28 } as React.CSSProperties} />
               <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
