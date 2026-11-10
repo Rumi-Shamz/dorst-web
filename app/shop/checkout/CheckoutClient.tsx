@@ -30,6 +30,7 @@ export function CheckoutClient() {
   const [catalogError, setCatalogError] = useState('')
   const [loadingCatalog, setLoadingCatalog] = useState(true)
 
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [line1, setLine1] = useState('')
@@ -125,6 +126,7 @@ export function CheckoutClient() {
         body: JSON.stringify({
           checkbox_18plus: true,
           captcha_token: captchaToken,
+          customer_name: name.trim(),
           contact_email: email.trim(),
           contact_phone: phone.trim() || undefined,
           notes: notes.trim() || undefined,
@@ -212,6 +214,9 @@ export function CheckoutClient() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 32, alignItems: 'start' }} className="shop-layout">
         <form onSubmit={(e) => void onSubmit(e)} style={{ display: 'grid', gap: 16 }}>
+          <Field label={t('name')} required>
+            <input type="text" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} autoComplete="name" />
+          </Field>
           <Field label={t('email')} required>
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} autoComplete="email" />
           </Field>

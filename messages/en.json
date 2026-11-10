@@ -119,6 +119,7 @@
     "heading": "Checkout",
     "sub": "Sofia delivery. We’ll email confirmation after the brewery confirms your order.",
     "backToShop": "Back to shop",
+    "name": "Full name",
     "email": "Email",
     "phone": "Phone (optional)",
     "address": "Delivery address",
@@ -246,5 +247,45 @@
       "statusShipped": "Shipped",
       "statusDelivered": "Delivered"
     }
+  },
+  "Privacy": {
+    "metaTitle": "Privacy Policy — Dorst Brewery",
+    "heading": "Legal",
+    "title": "Privacy Policy",
+    "updated": "Last updated: 10 November 2026",
+    "sections": [
+      {
+        "title": "Who we are",
+        "body": "Dorst beers are sold by Crowbar Ltd (Кроубар ООД), UIC 206445482, registered office: 1 Chervena Stena St., entr. 1, fl. 2, office B-2, Lozenets, 1421 Sofia, Bulgaria, the controller of the personal data described here. For any privacy question or request, write to hello@dorst.bg."
+      },
+      {
+        "title": "What we collect",
+        "body": "Web-shop orders: your name, email address, optional phone number, delivery address, the products you order, any note you add, and your confirmation that you are 18 or older. Partner portal: your company's EIK, a contact email address and the orders your company places. Every visitor: the IP address of each request, used only to stop abuse."
+      },
+      {
+        "title": "Why we use it",
+        "body": "To accept, deliver and invoice your order (performance of a contract). To keep invoices and accounting records (legal obligation under Bulgarian accounting and tax law). To recognise you as a returning customer so your orders and invoices stay together, and to protect the site against bots and abuse (our legitimate interests). We do not sell your data or use it for advertising."
+      },
+      {
+        "title": "Your customer record",
+        "body": "When you order through the web shop, we keep a customer record with your name, contact details and address in our order system, so the next order with the same email address is linked to it. Invoices to private persons are issued to \"Частен Клиент\" (private client) under that record."
+      },
+      {
+        "title": "Who processes it for us",
+        "body": "Vercel (website hosting and privacy-friendly visit statistics without cookies), Supabase (our order database, hosted in the EU), Resend (order and invoice emails), Cloudflare Turnstile (the bot check at checkout) and Upstash (rate limiting by IP address). Each acts only on our instructions. Where a provider is outside the EU, the transfer is covered by the European Commission's standard contractual clauses or an adequacy decision."
+      },
+      {
+        "title": "How long we keep it",
+        "body": "Invoices and accounting records: as long as Bulgarian accounting and tax law requires, currently up to 10 years. Your customer record: while you are an active customer and for up to 3 years after your last order, unless the law requires longer. Abuse-prevention data about IP addresses: minutes, not days."
+      },
+      {
+        "title": "Cookies and browser storage",
+        "body": "dorst-age-verified remembers that you confirmed you are 18 or older (1 year). A language cookie remembers your language choice. Your cart is kept in your browser's local storage and the partner portal sign-in in session storage; neither is sent to anyone else. We use no advertising or tracking cookies."
+      },
+      {
+        "title": "Your rights",
+        "body": "You can ask us for access to your data, correction, erasure, restriction of processing, a portable copy, or object to processing based on our legitimate interests. Write to hello@dorst.bg; we answer within one month. Data we must keep for accounting cannot be erased before that period ends. You may also complain to the Commission for Personal Data Protection (КЗЛД), 2 Prof. Tsvetan Lazarov Blvd., Sofia 1592, www.cpdp.bg."
+      }
+    ]
   }
 }
