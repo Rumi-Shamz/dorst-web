@@ -1,0 +1,37 @@
+# Locks pr-goblin issues so only collaborators can comment on them.
+#
+# This repo is public, and pr-goblin's agent reads an issue's comments as well
+# as its body when it works a `goblin` issue. Without the lock, any GitHub user
+# could add instructions to a trusted report. Collaborators (including the
+# GOBLIN_GH_TOKEN owner the runner acts as) can still comment on locked issues.
+#
+# Runs whether or not the runner is enabled; it only locks conversations.
+
+name: pr-goblin lock
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  lock:
+    if: >-
+      !github.event.issue.locked && (
+        contains(github.event.issue.labels.*.name, 'goblin') ||
+        contains(github.event.issue.labels.*.name, 'user-feedback')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lock the conversation
+        # An issue filed with labels fires `opened` plus one `labeled` per label,
+        # so several runs race; losing the race (already locked) is success.
+        run: |
+          locked() { [ "$(gh issue view "$NUMBER" --repo "$REPO" --json locked -q .locked)" = "true" ]; }
+          locked || gh issue lock "$NUMBER" --repo "$REPO" || locked
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}

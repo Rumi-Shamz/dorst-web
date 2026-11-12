@@ -1,0 +1,105 @@
+# pr-goblin runner: works open issues labelled `goblin` and opens a PR into
+# `staging` for each. It never merges; Vercel builds a preview of each PR and a
+# human reviews it. Based on pr-goblin's examples/goblin.yml (v0.1.0).
+#
+# Off until the repo variable GOBLIN_ENABLED is "true" (Settings → Secrets and
+# variables → Actions → Variables). Set it to anything else to stop all runs.
+#
+# Secrets:
+#   GOBLIN_GH_TOKEN          fine-grained PAT, this repo only: Contents, Issues,
+#                            Pull requests read/write. The built-in GITHUB_TOKEN
+#                            is refused on purpose: its commits are authored by
+#                            github-actions[bot], which Vercel won't deploy.
+#   CLAUDE_CODE_OAUTH_TOKEN  the agent on a Claude subscription (`claude setup-token`)
+#     or ANTHROPIC_API_KEY   pay-per-use. If both are set the API key wins.
+#
+# Issues get `goblin` from the partner-portal feedback widget (signed partner
+# reports), or by hand from a maintainer. Reports labelled `untrusted` are held
+# until a human removes the label. goblin-lock.yml locks these issues so only
+# collaborators can comment: the agent reads the comments.
+
+name: pr-goblin
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # GitHub's minimum is 5 minutes, and runs are often late
+  workflow_dispatch:
+
+# One run at a time, so two runs never pick up the same ticket.
+concurrency:
+  group: pr-goblin
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    if: vars.GOBLIN_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check secrets
+        env:
+          HAS_GH_TOKEN: ${{ secrets.GOBLIN_GH_TOKEN != '' }}
+          HAS_API_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+          HAS_OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        run: |
+          if [ "$HAS_GH_TOKEN" != "true" ]; then
+            echo "::error::Set the GOBLIN_GH_TOKEN secret first."
+            exit 1
+          fi
+          if [ "$HAS_API_KEY" != "true" ] && [ "$HAS_OAUTH" != "true" ]; then
+            echo "::error::Set CLAUDE_CODE_OAUTH_TOKEN (Claude subscription) or ANTHROPIC_API_KEY."
+            exit 1
+          fi
+
+      - name: Get pr-goblin
+        uses: actions/checkout@v4
+        with:
+          repository: Rumi-Shamz/pr-goblin
+          # Pinned to release v0.1.0, the same release vendored in vendor/pr-goblin.
+          ref: b64685e588ab8613330e25c3da25bf9432dd63a6
+          path: pr-goblin
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@v2
+
+      # Node and pnpm so the agent can install and build this repo to check its change.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install the runner and the coding agent
+        run: |
+          cd pr-goblin/runner && bun install --frozen-lockfile
+          npm install -g @anthropic-ai/claude-code
+
+      - name: Git identity for the agent's commits
+        run: |
+          # Commit as the token's owner (id-prefixed noreply address). A bare
+          # pr-goblin@users.noreply.github.com belongs to a stranger's account,
+          # and Vercel refuses to deploy commits by authors outside the team.
+          owner=$(gh api user -q '"\(.id) \(.login)"')
+          read -r id login <<<"$owner"
+          git config --global user.name "$login"
+          git config --global user.email "$id+$login@users.noreply.github.com"
+          gh auth setup-git
+        env:
+          GH_TOKEN: ${{ secrets.GOBLIN_GH_TOKEN }}
+
+      - name: Work the queue
+        run: bun pr-goblin/runner/src/cli/app.ts once --timeout 50
+        env:
+          GH_TOKEN: ${{ secrets.GOBLIN_GH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GOBLIN_SOURCE: github
+          GOBLIN_REPO: ${{ github.repository }}
+          GOBLIN_BASE_BRANCH: staging
+          GOBLIN_AGENT: claude
+          GOBLIN_MAX_CONCURRENT: '1'
