@@ -16,6 +16,9 @@ const nextConfig = {
   trailingSlash: true,
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
+    // '1' on the GitHub Pages export: no API routes there, so features that
+    // need them (the partner feedback widget) stay off.
+    NEXT_PUBLIC_STATIC_EXPORT: isGithubPages ? '1' : '',
   },
   typescript: {
     ignoreBuildErrors: true,

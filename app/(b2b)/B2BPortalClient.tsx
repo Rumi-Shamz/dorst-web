@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { WhaleSVG } from '@/components/whale/WhaleSVG'
 import { DorstLogo } from '@/components/brand/DorstLogo'
+import { PartnerFeedback } from '@/components/feedback/PartnerFeedback'
 import {
   checkAvailability,
   clearPartnerSession,
@@ -407,6 +408,7 @@ export function B2BPortalClient() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAFAF5', fontFamily: 'var(--font-sans)' }}>
+      <PartnerFeedback active={loggedIn} />
       <header style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', borderBottom: '1px solid var(--line)', background: '#FAFAF5', position: 'sticky', top: 0, zIndex: 100 }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--ink)' }}>
           <DorstLogo height={28} />

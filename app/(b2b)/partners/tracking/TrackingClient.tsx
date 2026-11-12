@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { WhaleSVG } from '@/components/whale/WhaleSVG'
+import { PartnerFeedback } from '@/components/feedback/PartnerFeedback'
 import {
   fetchPartnerOrder,
   fetchPartnerOrders,
@@ -83,6 +84,11 @@ export function TrackingClient() {
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<TrackedOrder | null | 'not-found' | 'need-login'>(null)
   const [loading, setLoading] = useState(false)
+  const [signedIn, setSignedIn] = useState(false)
+
+  useEffect(() => {
+    setSignedIn(!!getPartnerToken())
+  }, [])
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -114,6 +120,7 @@ export function TrackingClient() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--foam)', paddingTop: 72 }}>
+      <PartnerFeedback active={signedIn} />
       <div style={{ background: 'var(--ink)', color: 'var(--foam)', padding: '48px 48px 40px' }}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
