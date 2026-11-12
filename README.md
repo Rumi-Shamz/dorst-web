@@ -46,6 +46,15 @@ Preview deployments are the staging website: they call the **staging** ERP, neve
 4. If Deployment Protection is on for previews, allow the staging domain (or management cannot open it without a Vercel login).
 5. B2C checkout uses Turnstile: add the staging domain to the widget's allowed hostnames.
 
+### Partner feedback → GitHub issue → agent PR (pr-goblin)
+
+Signed-in partners on `/partners` get a **Feedback** tab ([pr-goblin](https://github.com/Rumi-Shamz/pr-goblin), vendored in `vendor/pr-goblin/`). A report becomes an issue on this repo, and the scheduled runner (`.github/workflows/goblin.yml`) has an agent open a fix PR into `staging`. Nothing merges on its own.
+
+- **Who:** signed-in partners only. The portal trades the partner's ERP token for a 1-hour HttpOnly cookie (`POST /api/feedback/session`, checked against the ERP's `/api/partner/me`); `/api/feedback` accepts reports only with that cookie and signs the reporter, so partner reports are trusted. Public visitors get no widget.
+- **Public repo:** issues are public. A report names the partner only as `partner:<ERP client id>`, and carries no screenshot, console/network logs or referrer. What the partner types is published as written. `goblin-lock.yml` locks these issues so only collaborators can comment (the agent reads comments).
+- **Off by default:** the widget appears only when `PR_GOBLIN_GITHUB_TOKEN` and `PR_GOBLIN_TRUST_SECRET` are set on Vercel (see `.env.example`); the runner only when the repo variable `GOBLIN_ENABLED` is `true`. Never on GitHub Pages (no API routes).
+- **Tests:** `node --test 'tests/*.test.mjs'` (Node 22.18+).
+
 ### GitHub Pages (static preview only)
 
 A workflow builds a **static export** for preview/demo. API routes and middleware do not run on Pages.
