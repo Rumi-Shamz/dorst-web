@@ -1,5 +1,6 @@
 'use client'
 
+import { safeExternalUrl } from '@/lib/safe-url'
 import { useState, useReducer, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -345,8 +346,10 @@ export function B2BPortalClient() {
   async function onDownloadInvoice() {
     try {
       const result = await downloadInvoicePdf(confirmInvoiceId)
-      if (result.type === 'url' && result.url) {
-        window.open(result.url, '_blank')
+      if (result.type === 'url') {
+        const fileUrl = safeExternalUrl(result.url)
+        if (!fileUrl) throw new Error('Invoice link is not available')
+        window.open(fileUrl, '_blank', 'noopener,noreferrer')
         return
       }
       if (result.type === 'pdf') {
@@ -677,11 +680,11 @@ export function B2BPortalClient() {
                     </>
                   )}
                 </div>
-                {registryDraft.registry_url && (
+                {safeExternalUrl(registryDraft.registry_url) && (
                   <a
-                    href={registryDraft.registry_url}
+                    href={safeExternalUrl(registryDraft.registry_url)}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginTop: 4 }}
                   >
                     Open in Trade Registry ↗
@@ -823,8 +826,8 @@ export function B2BPortalClient() {
             <div style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 10, padding: 20, marginBottom: 24 }}>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Confirm delivery address</div>
               <p style={{ fontSize: 14, marginBottom: 12 }}>{addressLine}</p>
-              {mapsUrl && (
-                <a href={mapsUrl} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 600 }}>View on Google Maps ↗</a>
+              {safeExternalUrl(mapsUrl) && (
+                <a href={safeExternalUrl(mapsUrl)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 600 }}>View on Google Maps ↗</a>
               )}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, fontSize: 14 }}>
                 <input type="checkbox" checked={addressConfirmed} onChange={(e) => setAddressConfirmed(e.target.checked)} />
@@ -904,8 +907,10 @@ export function B2BPortalClient() {
                       onClick={async () => {
                         try {
                           const result = await downloadInvoicePdf(inv.id)
-                          if (result.type === 'url' && result.url) {
-                            window.open(result.url, '_blank')
+                          if (result.type === 'url') {
+                            const fileUrl = safeExternalUrl(result.url)
+                            if (!fileUrl) throw new Error('Invoice link is not available')
+                            window.open(fileUrl, '_blank', 'noopener,noreferrer')
                             return
                           }
                           if (result.type === 'pdf') {

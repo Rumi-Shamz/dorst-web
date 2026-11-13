@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { resolveReturnPath } from '@/lib/safe-return-path'
 import { WhaleSVG } from '@/components/whale/WhaleSVG'
 
 const COOKIE = 'dorst-age-verified'
@@ -10,9 +11,8 @@ const COOKIE = 'dorst-age-verified'
 /** Same-origin relative path only (blocks open redirects). */
 function getReturnPath() {
   if (typeof window === 'undefined') return '/'
-  const raw = new URLSearchParams(window.location.search).get('return') ?? '/'
-  if (!raw.startsWith('/') || raw.startsWith('//')) return '/'
-  return raw
+  const raw = new URLSearchParams(window.location.search).get('return')
+  return resolveReturnPath(raw, window.location.origin, process.env.NEXT_PUBLIC_BASE_PATH ?? '')
 }
 
 function setVerifiedCookie() {

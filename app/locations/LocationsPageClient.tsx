@@ -1,5 +1,6 @@
 'use client'
 
+import { safeExternalUrl } from '@/lib/safe-url'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { venues } from '@/lib/data'
@@ -189,7 +190,7 @@ export function LocationsPageClient() {
 function VenueCard({ venue, openLabel }: { venue: DisplayVenue; openLabel: string }) {
   return (
     <a
-      href={venue.googleMapsUrl}
+      href={safeExternalUrl(venue.googleMapsUrl)}
       target="_blank"
       rel="noopener noreferrer"
       style={{
