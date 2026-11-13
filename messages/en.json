@@ -246,6 +246,36 @@
       "statusPreparing": "Preparing",
       "statusShipped": "Shipped",
       "statusDelivered": "Delivered"
+    },
+    "auth": {
+      "emailRequired": "Enter your email",
+      "forgotLink": "Forgot password?",
+      "forgotSubmit": "Email me a link →",
+      "forgotSubtitle": "Enter the email you registered with and we will send you a link to set a new password.",
+      "forgotFailed": "Could not send the link. Please try again later.",
+      "backToLogin": "Back to sign in",
+      "linkSentTitle": "Check your email",
+      "linkSentSubtitle": "Follow the link in the email to set your password, then sign in with your EIK.",
+      "linkSentBody": "If an active partner account matches, we have emailed a link to set a password. It is valid for 60 minutes and can be used once. It can take a minute to arrive; check your spam folder too.",
+      "pendingTitle": "Registration received",
+      "pendingSubtitle": "Your registration is waiting for approval.",
+      "pendingBody": "Thank you for registering. Our team will review your company and approve access, usually within one working day. Once approved, we will email you a link to set your password. You cannot sign in before that.",
+      "reset": {
+        "heading": "Set your password",
+        "sub": "Choose a password of at least 10 characters.",
+        "password": "New password",
+        "confirm": "Repeat password",
+        "submit": "Save password",
+        "saving": "Saving…",
+        "tooShort": "The password must be at least 10 characters.",
+        "mismatch": "The passwords do not match.",
+        "missingToken": "This link is incomplete. Open the link from your email again, or request a new one.",
+        "failed": "This link is invalid or has expired. Request a new one.",
+        "successTitle": "Password saved",
+        "successBody": "You can now sign in with your EIK and your new password.",
+        "goToLogin": "Go to sign in",
+        "requestNew": "Request a new link"
+      }
     }
   },
   "Privacy": {
