@@ -1,5 +1,6 @@
 'use client'
 
+import { safeExternalUrl } from '@/lib/safe-url'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
@@ -655,7 +656,7 @@ export default function HomePage() {
             {activeVenues.map((venue) => (
               <a
                 key={venue.id}
-                href={venue.googleMapsUrl}
+                href={safeExternalUrl(venue.googleMapsUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="location-card"
